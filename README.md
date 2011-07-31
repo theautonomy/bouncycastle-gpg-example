@@ -21,7 +21,8 @@ find [here](http://www.java2s.com/Open-Source/Java-Document/Security/Bouncy-Cast
 		decryptor.setPassword("password");
 		decryptor.decryptFile("test.txt.enc", "test.txt.dec");
 
-## This project contains a test pgp public and private key which are used for test
+## Try it
+This project contains a test pgp public and private key which are used for test
 purpose so that you can try it out right away. You can run the following mvn command
 from command line: 
 
