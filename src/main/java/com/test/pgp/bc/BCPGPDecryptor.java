@@ -60,12 +60,13 @@ public class BCPGPDecryptor {
 			//
 			// find the secret key
 			//
-			Iterator it = enc.getEncryptedDataObjects();
+			Iterator<PGPPublicKeyEncryptedData> it = enc.getEncryptedDataObjects();
 			PGPPrivateKey sKey = null;
 			PGPPublicKeyEncryptedData pbe = null;
 
 			while (sKey == null && it.hasNext()) {
-				pbe = (PGPPublicKeyEncryptedData) it.next();
+				//pbe = (PGPPublicKeyEncryptedData) it.next();
+				pbe = it.next();
 				sKey = BCPGPUtils.findSecretKey(keyIn, pbe.getKeyID(), passwd);
 			}
 
