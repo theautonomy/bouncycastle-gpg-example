@@ -1,9 +1,11 @@
 package com.test.pgp.bc;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 
 import org.bouncycastle.openpgp.PGPCompressedData;
@@ -39,11 +41,13 @@ public class BCPGPDecryptor {
 	
 	public void decryptFile(String inputFileNamePath, String outputFileNamePath) throws Exception {
 		decryptFile(new File(inputFileNamePath), new File(outputFileNamePath));
-		
+	}
+	
+	public void decryptFile(File inputFile, File outputFile) throws Exception {
+		decryptFile(new FileInputStream(inputFile), new FileOutputStream(outputFile));
 	}
 
-	public void decryptFile(File inputFile, File outputFile) throws Exception {
-		InputStream in = new FileInputStream(inputFile);
+	public void decryptFile(InputStream in, OutputStream out) throws Exception {
 		InputStream keyIn = new FileInputStream(new File(privateKeyFilePath));
 		char[] passwd = password.toCharArray();
 		in = PGPUtil.getDecoderStream(in);
@@ -51,7 +55,6 @@ public class BCPGPDecryptor {
 		try {
 			PGPObjectFactory pgpF = new PGPObjectFactory(in);
 			PGPEncryptedDataList enc;
-
 			Object o = pgpF.nextObject();
 			//
 			// the first object might be a PGP marker packet.
@@ -88,13 +91,13 @@ public class BCPGPDecryptor {
 
 			if (message instanceof PGPLiteralData) {
 				PGPLiteralData ld = (PGPLiteralData) message;
-				//FileOutputStream fOut = new FileOutputStream(ld.getFileName());
-				FileOutputStream fOut = new FileOutputStream(outputFile);
+				BufferedOutputStream bOut = new BufferedOutputStream(out);
 				InputStream unc = ld.getInputStream();
 				int ch;
 				while ((ch = unc.read()) >= 0) {
-					fOut.write(ch);
+					bOut.write(ch);
 				}
+				bOut.close();
 			} else if (message instanceof PGPOnePassSignatureList) {
 				throw new PGPException(
 						"encrypted message contains a signed message - not literal data.");
