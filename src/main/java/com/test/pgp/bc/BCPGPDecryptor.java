@@ -101,12 +101,8 @@ public class BCPGPDecryptor {
 
 			if (pbe.isIntegrityProtected()) {
 				if (!pbe.verify()) {
-					System.err.println("message failed integrity check");
-				} else {
-					System.err.println("message integrity check passed");
-				}
-			} else {
-				System.err.println("no message integrity check");
+					throw new PGPException("message failed integrity check");
+				} 
 			}
 		} catch (PGPException e) {
 			System.err.println(e);
