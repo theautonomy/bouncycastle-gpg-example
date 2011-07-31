@@ -1,0 +1,19 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.test.pgp.bc</groupId>
+  <artifactId>BCPGPExample</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>Bouncy Castle OpenPGP encryption and decryption example</name>
+  <dependencies>
+  	<dependency>
+  		<groupId>bouncycastle</groupId>
+  		<artifactId>bcpg-jdk15</artifactId>
+  		<version>140</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>bouncycastle</groupId>
+  		<artifactId>bcprov-jdk15</artifactId>
+  		<version>140</version>
+  	</dependency>
+  </dependencies>
+</project>
