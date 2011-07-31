@@ -18,8 +18,8 @@ import org.bouncycastle.openpgp.PGPUtil;
 
 public class BCPGPDecryptor {
 	
-	String privateKeyFilePath;
-	String password;
+	private String privateKeyFilePath;
+	private String password;
 	
 	public String getPrivateKeyFilePath() {
 		return privateKeyFilePath;
@@ -36,9 +36,14 @@ public class BCPGPDecryptor {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
+	
 	public void decryptFile(String inputFileNamePath, String outputFileNamePath) throws Exception {
-		InputStream in = new FileInputStream(new File(inputFileNamePath));
+		decryptFile(new File(inputFileNamePath), new File(outputFileNamePath));
+		
+	}
+
+	public void decryptFile(File inputFile, File outputFile) throws Exception {
+		InputStream in = new FileInputStream(inputFile);
 		InputStream keyIn = new FileInputStream(new File(privateKeyFilePath));
 		char[] passwd = password.toCharArray();
 		in = PGPUtil.getDecoderStream(in);
@@ -63,9 +68,7 @@ public class BCPGPDecryptor {
 			Iterator<PGPPublicKeyEncryptedData> it = enc.getEncryptedDataObjects();
 			PGPPrivateKey sKey = null;
 			PGPPublicKeyEncryptedData pbe = null;
-
 			while (sKey == null && it.hasNext()) {
-				//pbe = (PGPPublicKeyEncryptedData) it.next();
 				pbe = it.next();
 				sKey = BCPGPUtils.findSecretKey(keyIn, pbe.getKeyID(), passwd);
 			}
@@ -86,7 +89,7 @@ public class BCPGPDecryptor {
 			if (message instanceof PGPLiteralData) {
 				PGPLiteralData ld = (PGPLiteralData) message;
 				//FileOutputStream fOut = new FileOutputStream(ld.getFileName());
-				FileOutputStream fOut = new FileOutputStream(new File(outputFileNamePath));
+				FileOutputStream fOut = new FileOutputStream(outputFile);
 				InputStream unc = ld.getInputStream();
 				int ch;
 				while ((ch = unc.read()) >= 0) {

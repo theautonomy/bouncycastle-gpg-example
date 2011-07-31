@@ -34,10 +34,11 @@ import java.util.Iterator;
 
 public class BCPGPEncryptor {
 	
-	boolean isArmored;
-	boolean checkIntegrity; 
-	String publicKeyFilePath;
-	PGPPublicKey publicKey;
+	private boolean isArmored;
+	private boolean checkIntegrity; 
+	private String publicKeyFilePath;
+	private PGPPublicKey publicKey;
+	private PGPEncryptedDataGenerator cPk;
 	
 	public String getPublicKeyFilePath() {
 		return publicKeyFilePath;
@@ -64,8 +65,20 @@ public class BCPGPEncryptor {
 		this.checkIntegrity = checkIntegrity;
 	}
 
-	public void encryptFile(String inputFileNamePath, String outputFileNamePath) throws IOException, NoSuchProviderException {
-		OutputStream out = new FileOutputStream(new File(outputFileNamePath));
+	public void encryptFile(String inputFileNamePath, String outputFileNamePath) throws IOException, NoSuchProviderException, PGPException {
+		encryptFile(new File(inputFileNamePath), new File(outputFileNamePath));
+	}
+	
+	public void encryptFile(File inputFile, File outputFile) throws IOException, NoSuchProviderException, PGPException {
+		if (cPk == null) {
+			cPk = new PGPEncryptedDataGenerator( PGPEncryptedData.CAST5, checkIntegrity, new SecureRandom(), "BC");
+			try {
+				cPk.addMethod(publicKey);
+			} catch (PGPException e) {
+				throw new PGPException("Error when creating PGP encryptino data generator.");				
+			}
+		}
+		OutputStream out = new FileOutputStream(outputFile);
 		if (isArmored) {
 			out = new ArmoredOutputStream(out);
 		}
@@ -73,12 +86,8 @@ public class BCPGPEncryptor {
 		try {
 			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 			PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator( PGPCompressedData.ZIP);
-			PGPUtil.writeFileToLiteralData(comData.open(bOut), PGPLiteralData.BINARY, new File(inputFileNamePath));
+			PGPUtil.writeFileToLiteralData(comData.open(bOut), PGPLiteralData.BINARY, inputFile);
 			comData.close();
-
-			PGPEncryptedDataGenerator cPk = 
-				new PGPEncryptedDataGenerator( PGPEncryptedData.CAST5, checkIntegrity, new SecureRandom(), "BC");
-			cPk.addMethod(publicKey);
 			byte[] bytes = bOut.toByteArray();
 			OutputStream cOut = cPk.open(out, bytes.length);
 			cOut.write(bytes);
@@ -90,6 +99,5 @@ public class BCPGPEncryptor {
 				e.getUnderlyingException().printStackTrace();
 			}
 		}
-	}
-
+	}
 }
