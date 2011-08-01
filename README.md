@@ -28,4 +28,8 @@ from command line:
 
         >mvn exec:java -Dexec.mainClass=com.test.pgp.bc.BCPGPTest
 
+## Note
+If you get error "java.security.InvalidKeyException: Illegal key size", you may need to install
+the unrestricted policy files for the JVM you are using. See details [here](http://www.bouncycastle.org/wiki/display/JA1/Frequently+Asked+Questions)
+
  
