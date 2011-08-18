@@ -13,6 +13,7 @@ import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
@@ -94,12 +95,18 @@ public class BCPGPDecryptor {
 		InputStream clear = pbe.getDataStream(sKey, "BC");
 		PGPObjectFactory plainFact = new PGPObjectFactory(clear);
 		Object message = plainFact.nextObject();
+		PGPObjectFactory pgpFact = null; 
 		if (message instanceof PGPCompressedData) {
 			PGPCompressedData cData = (PGPCompressedData) message;
-			PGPObjectFactory pgpFact = new PGPObjectFactory(cData.getDataStream());
+			pgpFact = new PGPObjectFactory(cData.getDataStream());
 			message = pgpFact.nextObject();
 		}
 
+		if (message instanceof PGPOnePassSignatureList) {
+			message = pgpFact.nextObject();
+			
+		}
+		
 		if (message instanceof PGPLiteralData) {
 			PGPLiteralData ld = (PGPLiteralData) message;
 			if (pbe.isIntegrityProtected()) {
@@ -108,10 +115,8 @@ public class BCPGPDecryptor {
 				}
 			}
 			return ld.getInputStream();
-		} else if (message instanceof PGPOnePassSignatureList) {
-			throw new PGPException(
-					"encrypted message contains a signed message - not literal data.");
-		} else {
+		} 
+		else {
 			throw new PGPException(
 					"message is not a simple encrypted file - type unknown.");
 		}
