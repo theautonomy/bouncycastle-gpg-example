@@ -9,7 +9,7 @@ public class BCPGPTest {
 
 	public static void main(String[] args) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-		encryptFile();
+		//encryptFile();
 		decryptFile();
 	}
 	
@@ -25,6 +25,7 @@ public class BCPGPTest {
 		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
 		decryptor.setPrivateKeyFilePath("test.gpg.prv");
 		decryptor.setPassword("password");
-		decryptor.decryptFile("test.txt.enc", "test.txt.dec");
+		//decryptor.decryptFile("test.txt.enc", "test.txt.dec");
+		decryptor.decryptFile("test.signed.enc", "test.signed.dec");
 	}
 	}

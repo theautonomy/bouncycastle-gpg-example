@@ -16,7 +16,9 @@ import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
+import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 
 public class BCPGPDecryptor {
@@ -61,6 +63,7 @@ public class BCPGPDecryptor {
 	}
 
 	public InputStream decryptFile(InputStream in) throws Exception {
+		InputStream is = null;
 		InputStream keyIn = new FileInputStream(new File(privateKeyFilePath));
 		char[] passwd = password.toCharArray();
 		in = PGPUtil.getDecoderStream(in);
@@ -102,7 +105,13 @@ public class BCPGPDecryptor {
 			message = pgpFact.nextObject();
 		}
 
+        PGPOnePassSignature ops = null; 
 		if (message instanceof PGPOnePassSignatureList) {
+			PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)message; 
+            ops = p1.get(0);
+            PGPPublicKey signerPublicKey = BCPGPUtils.readPublicKey("wahaha.gpg.pub");
+            //ops.initVerify(signerPublicKey, "BC");
+            ops.initVerify(signerPublicKey, "BC");
 			message = pgpFact.nextObject();
 			
 		}
@@ -114,12 +123,22 @@ public class BCPGPDecryptor {
 					throw new PGPException("message failed integrity check");
 				}
 			}
-			return ld.getInputStream();
+			//return ld.getInputStream();
+			is = ld.getInputStream();
+			
+			 PGPSignatureList p3 = (PGPSignatureList) pgpFact.nextObject();
+
+             if (ops.verify(p3.get(0))) {
+                 System.out.println("signature verified.");
+             } else {
+                 System.out.println("signature verification failed.");
+             }
 		} 
 		else {
 			throw new PGPException(
 					"message is not a simple encrypted file - type unknown.");
 		}
+		return is;
 	}
 
 }
