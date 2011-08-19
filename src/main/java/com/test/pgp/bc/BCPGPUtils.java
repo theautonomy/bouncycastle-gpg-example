@@ -49,7 +49,39 @@ public abstract class BCPGPUtils {
 		return key;
 	}
 
-	public static PGPPrivateKey findSecretKey(InputStream keyIn, long keyID,
+	public static PGPPublicKey readPublicKey(String publicKeyFilePath, long keyId) throws IOException, PGPException {
+
+		InputStream in = new FileInputStream(new File(publicKeyFilePath));
+
+		in = PGPUtil.getDecoderStream(in);
+		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(in);
+		PGPPublicKey key = null;
+
+		Iterator rIt = pgpPub.getKeyRings();
+		while (rIt.hasNext()) {
+			PGPPublicKeyRing kRing = (PGPPublicKeyRing) rIt.next();
+			Iterator kIt = kRing.getPublicKeys();
+			boolean encryptionKeyFound = false;
+
+			while (kIt.hasNext()) {
+				PGPPublicKey k = (PGPPublicKey) kIt.next();
+				long keyid = k.getKeyID();
+				if (keyid == keyId) {
+					key = k;
+				}
+				//if (k.isEncryptionKey()) {
+				//	key = k;
+				//}
+			}
+		}
+
+		if (key == null) {
+			throw new IllegalArgumentException(
+					"Can't find encryption key in key ring.");
+		}
+
+		return key;
+	}	public static PGPPrivateKey findSecretKey(InputStream keyIn, long keyID,
 			char[] pass) throws IOException, PGPException,
 			NoSuchProviderException {
 		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(

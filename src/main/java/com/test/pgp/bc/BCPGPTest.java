@@ -9,8 +9,9 @@ public class BCPGPTest {
 
 	public static void main(String[] args) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-		//encryptFile();
+		encryptFile();
 		decryptFile();
+		decryptSignedFile();
 	}
 	
 	public static void encryptFile() throws Exception {
@@ -25,7 +26,16 @@ public class BCPGPTest {
 		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
 		decryptor.setPrivateKeyFilePath("test.gpg.prv");
 		decryptor.setPassword("password");
-		//decryptor.decryptFile("test.txt.enc", "test.txt.dec");
-		decryptor.decryptFile("test.signed.enc", "test.signed.dec");
+		decryptor.decryptFile("test.txt.enc", "test.txt.dec");
+	}
+		public static void decryptSignedFile() throws Exception {
+		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
+		decryptor.setPrivateKeyFilePath("test.gpg.prv");
+		decryptor.setPassword("password");
+		decryptor.setSigned(true);
+		decryptor.setSigningPublicKeyFilePath("wahaha.gpg.pub");
+		
+		// this file is encrypted with weili's public key and signed using wahaha's private key
+		decryptor.decryptFile("test.txt.signed.asc", "test.txt.signed.dec");
 	}
 	}
