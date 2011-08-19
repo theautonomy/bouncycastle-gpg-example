@@ -6,7 +6,7 @@ and decrypt files.
 This project is a refactory of the Bouncy Castle example which you can 
 find [here](http://www.java2s.com/Open-Source/Java-Document/Security/Bouncy-Castle/org/bouncycastle/openpgp/examples/KeyBasedLargeFileProcessor.java.htm)
 
-## Code snippet to encrypt a file
+## Code snippet to encrypt a file without signing
 
         BCPGPEncryptor encryptor = new BCPGPEncryptor();
 		encryptor.setArmored(false);
@@ -14,12 +14,22 @@ find [here](http://www.java2s.com/Open-Source/Java-Document/Security/Bouncy-Cast
 		encryptor.setPublicKeyFilePath("./test.gpg.pub");
 		encryptor.encryptFile("./test.txt", "./test.txt.enc");
 		
-## Code snippet to decrypt a file
+## Code snippet to decrypt a file without verifying signature;
 
 		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
 		decryptor.setPrivateKeyFilePath("test.gpg.prv");
 		decryptor.setPassword("password");
 		decryptor.decryptFile("test.txt.enc", "test.txt.dec");
+
+## Code snippet to decrypt a file and verify signature;
+
+		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
+		decryptor.setPrivateKeyFilePath("test.gpg.prv");
+		decryptor.setPassword("password");
+		decryptor.setSigned(true);
+		decryptor.setSigningPublicKeyFilePath("wahaha.gpg.pub");
+		// this file is encrypted with weili's public key and signed using wahaha's private key
+		decryptor.decryptFile("test.txt.signed.asc", "test.txt.signed.dec");
 
 ## Try it
 This project contains a test pgp public and private key which are used for test

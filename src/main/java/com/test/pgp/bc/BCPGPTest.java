@@ -12,6 +12,7 @@ public class BCPGPTest {
 		encryptFile();
 		decryptFile();
 		decryptSignedFile();
+		decryptSignedFileWithoutSignatureVerification();
 	}
 	
 	public static void encryptFile() throws Exception {
@@ -38,4 +39,11 @@ public class BCPGPTest {
 		// this file is encrypted with weili's public key and signed using wahaha's private key
 		decryptor.decryptFile("test.txt.signed.asc", "test.txt.signed.dec");
 	}
-	}
+		public static void decryptSignedFileWithoutSignatureVerification() throws Exception {
+		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
+		decryptor.setPrivateKeyFilePath("test.gpg.prv");
+		decryptor.setPassword("password");
+		
+		// this file is encrypted with weili's public key and signed using wahaha's private key
+		decryptor.decryptFile("test.txt.signed.asc", "test.txt.signed.dec2");
+	}}
