@@ -55,7 +55,7 @@ public class BCPGPTest {
 		BCPGPDecryptor decryptor = new BCPGPDecryptor(); 
 		decryptor.setPrivateKeyFilePath("test.gpg.prv");
 		decryptor.setPassword("password");
-		//decryptor.setSigned(true);
+		decryptor.setSigned(true);
 		decryptor.setSigningPublicKeyFilePath("wahaha.gpg.pub");
 		
 		// this file is encrypted with weili's public key and signed using wahaha's private key

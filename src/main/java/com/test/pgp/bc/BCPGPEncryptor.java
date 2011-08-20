@@ -76,7 +76,7 @@ public class BCPGPEncryptor {
 
 	private boolean isSigning;
 
-	private PGPEncryptedDataGenerator cPk;
+	private PGPEncryptedDataGenerator pedg;
 
 	public String getPublicKeyFilePath() {
 		return publicKeyFilePath;
@@ -111,59 +111,59 @@ public class BCPGPEncryptor {
 
 	public void encryptFile(File inputFile, File outputFile)
 			throws IOException, NoSuchProviderException, PGPException {
-		if (cPk == null) {
-			cPk = new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5,
+		if (pedg == null) {
+			pedg = new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5,
 					checkIntegrity, new SecureRandom(), "BC");
+			
 			try {
-				cPk.addMethod(publicKey);
+				pedg.addMethod(publicKey);
 			} catch (PGPException e) {
 				throw new PGPException(
 						"Error when creating PGP encryptino data generator.");
 			}
 		}
-		OutputStream out = new FileOutputStream(outputFile);
+		OutputStream fileOutStream = new FileOutputStream(outputFile);
 		if (isArmored) {
-			out = new ArmoredOutputStream(out);
+			fileOutStream = new ArmoredOutputStream(fileOutStream);
 		}
 
-		OutputStream encryptdOut = cPk.open(out, new byte[1 << 16]);
-		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
-				PGPCompressedData.ZIP);
-		OutputStream bcOut = comData.open(encryptdOut);
+		OutputStream encryptdOutStream = pedg.open(fileOutStream, new byte[1 << 16]);
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator( PGPCompressedData.ZIP);
+		OutputStream compressedOutStream = comData.open(encryptdOutStream);
 
 		try {
-			PGPSignatureGenerator sGen = null;
+			PGPSignatureGenerator sg = null;
 			if (isSigning) {
-				InputStream in = new FileInputStream(new File( signingPrivateKeyFilePath));
-				PGPSecretKey pgpSec = BCPGPUtils.findSecretKey(in);
-				PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey( signingPrivateKeyPassword.toCharArray(), "BC");
-				sGen = new PGPSignatureGenerator(pgpSec.getPublicKey() .getAlgorithm(), PGPUtil.SHA1, "BC");
-				sGen.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
-				Iterator it = pgpSec.getPublicKey().getUserIDs();
+				InputStream keyInputStream = new FileInputStream(new File( signingPrivateKeyFilePath));
+				PGPSecretKey secretKey = BCPGPUtils.findSecretKey(keyInputStream);
+				PGPPrivateKey privateKey = secretKey.extractPrivateKey( signingPrivateKeyPassword.toCharArray(), "BC");
+				sg = new PGPSignatureGenerator(secretKey.getPublicKey() .getAlgorithm(), PGPUtil.SHA1, "BC");
+				sg.initSign(PGPSignature.BINARY_DOCUMENT, privateKey);
+				Iterator it = secretKey.getPublicKey().getUserIDs();
 				if (it.hasNext()) {
-					PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-					spGen.setSignerUserID(false, (String) it.next());
-					sGen.setHashedSubpackets(spGen.generate());
+					PGPSignatureSubpacketGenerator ssg = new PGPSignatureSubpacketGenerator();
+					ssg.setSignerUserID(false, (String) it.next());
+					sg.setHashedSubpackets(ssg.generate());
 				}
-				sGen.generateOnePassVersion(false).encode(bcOut);
+				sg.generateOnePassVersion(false).encode(compressedOutStream);
 			}
 
-			PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
-			OutputStream lOut = lGen.open(bcOut, PGPLiteralData.BINARY, inputFile);
+			PGPLiteralDataGenerator lg= new PGPLiteralDataGenerator();
+			OutputStream literalDataOutStream = lg.open(compressedOutStream, PGPLiteralData.BINARY, inputFile);
 
-			byte[] bs = IOUtils.toByteArray(new FileInputStream(inputFile));
+			byte[] bytes = IOUtils.toByteArray(new FileInputStream(inputFile));
 
-			lOut.write(bs);
+			literalDataOutStream.write(bytes);
 			if (isSigning) {
-				sGen.update(bs);
-			    sGen.generate().encode(bcOut);
+				sg.update(bytes);
+			    sg.generate().encode(compressedOutStream);
 			}
-			lOut.close();
-			lGen.close();
-			bcOut.close();
+			literalDataOutStream.close();
+			lg.close();
+			compressedOutStream.close();
 			comData.close();
-			cPk.close();
-			out.close();
+			pedg.close();
+			fileOutStream.close();
 		} catch (PGPException e) {
 			System.err.println(e);
 			if (e.getUnderlyingException() != null) {
