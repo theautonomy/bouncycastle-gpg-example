@@ -9,12 +9,12 @@ public class BCPGPTest {
 
 	public static void main(String[] args) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-		//encryptFile();
-		//decryptFile();
+		encryptFile();
+		decryptFile();
 		encryptAndSignFile();
 		decryptSignedFile();
-		//decryptSignedFile1();
-		//decryptSignedFileWithoutSignatureVerification();
+		decryptSignedFile1();
+		decryptSignedFileWithoutSignatureVerification();
 	}
 	
 	public static void encryptFile() throws Exception {
@@ -36,8 +36,9 @@ public class BCPGPTest {
 		encryptor.setArmored(false);
 		encryptor.setCheckIntegrity(true);
 		encryptor.setPublicKeyFilePath("./test.gpg.pub");
-		//encryptor.setSigning(true);
+		encryptor.setSigning(true);
 		encryptor.setSigningPrivateKeyFilePath("wahaha.gpg.prv");
+		encryptor.setSigningPrivateKeyPassword("password");
 		encryptor.encryptFile("./test.txt", "./test.txt.signed.enc");
 	}
 		public static void decryptSignedFile() throws Exception {

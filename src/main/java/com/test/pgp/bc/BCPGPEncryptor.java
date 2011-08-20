@@ -46,8 +46,18 @@ public class BCPGPEncryptor {
 	private boolean checkIntegrity;
 	private String publicKeyFilePath;
 	private PGPPublicKey publicKey;
-	
+
 	private String signingPrivateKeyFilePath;
+	private String signingPrivateKeyPassword;
+
+	public String getSigningPrivateKeyPassword() {
+		return signingPrivateKeyPassword;
+	}
+
+	public void setSigningPrivateKeyPassword(String signingPrivateKeyPassword) {
+		this.signingPrivateKeyPassword = signingPrivateKeyPassword;
+	}
+
 	public String getSigningPrivateKeyFilePath() {
 		return signingPrivateKeyFilePath;
 	}
@@ -56,16 +66,16 @@ public class BCPGPEncryptor {
 		this.signingPrivateKeyFilePath = signingPrivateKeyFilePath;
 	}
 
-	public boolean isSigned() {
-		return isSigned;
+	public boolean isSigning() {
+		return isSigning;
 	}
 
-	public void setSigned(boolean isSigned) {
-		this.isSigned = isSigned;
+	public void setSigning(boolean isSigning) {
+		this.isSigning = isSigning;
 	}
 
-	private boolean isSigned;
-	
+	private boolean isSigning;
+
 	private PGPEncryptedDataGenerator cPk;
 
 	public String getPublicKeyFilePath() {
@@ -102,65 +112,58 @@ public class BCPGPEncryptor {
 	public void encryptFile(File inputFile, File outputFile)
 			throws IOException, NoSuchProviderException, PGPException {
 		if (cPk == null) {
-			cPk = new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5, checkIntegrity, new SecureRandom(), "BC");
+			cPk = new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5,
+					checkIntegrity, new SecureRandom(), "BC");
 			try {
 				cPk.addMethod(publicKey);
 			} catch (PGPException e) {
-				throw new PGPException("Error when creating PGP encryptino data generator.");
+				throw new PGPException(
+						"Error when creating PGP encryptino data generator.");
 			}
 		}
 		OutputStream out = new FileOutputStream(outputFile);
 		if (isArmored) {
 			out = new ArmoredOutputStream(out);
 		}
-		
-		OutputStream encryptdOut = cPk.open(out, new byte[ 1 << 16]);
-		
-		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-		
-		OutputStream bcOut = comData.open(encryptdOut); 
+
+		OutputStream encryptdOut = cPk.open(out, new byte[1 << 16]);
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
+				PGPCompressedData.ZIP);
+		OutputStream bcOut = comData.open(encryptdOut);
 
 		try {
-			InputStream in = new FileInputStream(new File(signingPrivateKeyFilePath));
-			PGPSecretKey pgpSec = BCPGPUtils.findSecretKey(in);
-			PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey( "password".toCharArray(), "BC");
-			PGPSignatureGenerator sGen = new PGPSignatureGenerator(pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC");
-
-			sGen.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
-
-			Iterator it = pgpSec.getPublicKey().getUserIDs();
-			if (it.hasNext()) {
-				PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-				spGen.setSignerUserID(false, (String) it.next());
-				sGen.setHashedSubpackets(spGen.generate());
+			PGPSignatureGenerator sGen = null;
+			if (isSigning) {
+				InputStream in = new FileInputStream(new File( signingPrivateKeyFilePath));
+				PGPSecretKey pgpSec = BCPGPUtils.findSecretKey(in);
+				PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey( signingPrivateKeyPassword.toCharArray(), "BC");
+				sGen = new PGPSignatureGenerator(pgpSec.getPublicKey() .getAlgorithm(), PGPUtil.SHA1, "BC");
+				sGen.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
+				Iterator it = pgpSec.getPublicKey().getUserIDs();
+				if (it.hasNext()) {
+					PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+					spGen.setSignerUserID(false, (String) it.next());
+					sGen.setHashedSubpackets(spGen.generate());
+				}
+				sGen.generateOnePassVersion(false).encode(bcOut);
 			}
-			//ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-			//PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-			
-			//OutputStream bcOut = comData.open(encryptdOut); 
-			
-			//OutputStream os = comData.open(bOut);
-			//sGen.generateOnePassVersion(false).encode(os);
-			sGen.generateOnePassVersion(false).encode(bcOut);
-			
-			 PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
-             OutputStream lOut = lGen.open(bcOut, PGPLiteralData.BINARY, inputFile);
-             
-             byte [] bs = IOUtils.toByteArray(new FileInputStream(inputFile));
-			
-			//PGPUtil.writeFileToLiteralData(lOut, PGPLiteralData.BINARY, inputFile);
-			//byte[] bytes = lOut.toByteArray();
+
+			PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+			OutputStream lOut = lGen.open(bcOut, PGPLiteralData.BINARY, inputFile);
+
+			byte[] bs = IOUtils.toByteArray(new FileInputStream(inputFile));
+
 			lOut.write(bs);
-			sGen.update(bs);
+			if (isSigning) {
+				sGen.update(bs);
+			    sGen.generate().encode(bcOut);
+			}
 			lOut.close();
 			lGen.close();
-			sGen.generate().encode(bcOut);
-			
 			bcOut.close();
 			comData.close();
 			cPk.close();
 			out.close();
-			
 		} catch (PGPException e) {
 			System.err.println(e);
 			if (e.getUnderlyingException() != null) {

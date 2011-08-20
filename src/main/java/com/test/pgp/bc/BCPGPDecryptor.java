@@ -133,7 +133,6 @@ public class BCPGPDecryptor {
 		PGPOnePassSignature ops = null;
 		if (message instanceof PGPOnePassSignatureList) {
 			if (isSigned) {
-				System.out.println("signed");
 				PGPOnePassSignatureList p1 = (PGPOnePassSignatureList) message;
 				ops = p1.get(0);
 				long keyId = ops.getKeyID();
