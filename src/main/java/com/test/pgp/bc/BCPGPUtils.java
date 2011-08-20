@@ -13,13 +13,13 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
 
 public abstract class BCPGPUtils {
 
-	public static PGPPublicKey readPublicKey(String publicKeyFilePath)
-			throws IOException, PGPException {
+	public static PGPPublicKey readPublicKey(String publicKeyFilePath) throws IOException, PGPException {
 
 		InputStream in = new FileInputStream(new File(publicKeyFilePath));
 
@@ -81,7 +81,8 @@ public abstract class BCPGPUtils {
 		}
 
 		return key;
-	}	public static PGPPrivateKey findSecretKey(InputStream keyIn, long keyID,
+	}
+		public static PGPPrivateKey findPrivateKey(InputStream keyIn, long keyID,
 			char[] pass) throws IOException, PGPException,
 			NoSuchProviderException {
 		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(
@@ -95,5 +96,39 @@ public abstract class BCPGPUtils {
 
 		return pgpSecKey.extractPrivateKey(pass, "BC");
 	}
+	
+	public static PGPSecretKey findSecretKey(InputStream in) throws IOException, PGPException {
+        in = PGPUtil.getDecoderStream(in);
+        PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection( in);
 
+        //
+        // we just loop through the collection till we find a key suitable for encryption, in the real
+        // world you would probably want to be a bit smarter about this.
+        //
+        PGPSecretKey key = null;
+
+        //
+        // iterate through the key rings.
+        //
+        Iterator rIt = pgpSec.getKeyRings();
+
+        while (key == null && rIt.hasNext()) {
+            PGPSecretKeyRing kRing = (PGPSecretKeyRing) rIt.next();
+            Iterator kIt = kRing.getSecretKeys();
+
+            while (key == null && kIt.hasNext()) {
+                PGPSecretKey k = (PGPSecretKey) kIt.next();
+
+                if (k.isSigningKey()) {
+                    key = k;
+                }
+            }
+        }
+
+        if (key == null) {
+            throw new IllegalArgumentException(
+                    "Can't find signing key in key ring.");
+        }
+        return key;
+    }
 }

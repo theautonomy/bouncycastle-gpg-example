@@ -113,7 +113,7 @@ public class BCPGPDecryptor {
 		PGPPublicKeyEncryptedData pbe = null;
 		while (sKey == null && it.hasNext()) {
 			pbe = it.next();
-			sKey = BCPGPUtils.findSecretKey(keyIn, pbe.getKeyID(), passwd);
+			sKey = BCPGPUtils.findPrivateKey(keyIn, pbe.getKeyID(), passwd);
 		}
 
 		if (sKey == null) {
@@ -133,6 +133,7 @@ public class BCPGPDecryptor {
 		PGPOnePassSignature ops = null;
 		if (message instanceof PGPOnePassSignatureList) {
 			if (isSigned) {
+				System.out.println("signed");
 				PGPOnePassSignatureList p1 = (PGPOnePassSignatureList) message;
 				ops = p1.get(0);
 				long keyId = ops.getKeyID();
@@ -154,9 +155,6 @@ public class BCPGPDecryptor {
 			
 			if (isSigned) {
 				ops.update(bytes);
-			}
-
-			if (isSigned) {
 				PGPSignatureList p3 = (PGPSignatureList) pgpFact.nextObject();
 				if (!ops.verify(p3.get(0))) {
 					throw new PGPException("Signature verification failed!");

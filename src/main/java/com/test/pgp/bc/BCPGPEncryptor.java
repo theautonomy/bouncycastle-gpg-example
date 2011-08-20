@@ -1,6 +1,8 @@
 package com.test.pgp.bc;
 
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
@@ -9,6 +11,7 @@ import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -110,14 +113,18 @@ public class BCPGPEncryptor {
 		if (isArmored) {
 			out = new ArmoredOutputStream(out);
 		}
+		
+		OutputStream encryptdOut = cPk.open(out, new byte[ 1 << 16]);
+		
+		PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+		
+		OutputStream bcOut = comData.open(encryptdOut); 
 
 		try {
 			InputStream in = new FileInputStream(new File(signingPrivateKeyFilePath));
 			PGPSecretKey pgpSec = BCPGPUtils.findSecretKey(in);
-			PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(
-					"password".toCharArray(), "BC");
-			PGPSignatureGenerator sGen = new PGPSignatureGenerator(pgpSec
-					.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC");
+			PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey( "password".toCharArray(), "BC");
+			PGPSignatureGenerator sGen = new PGPSignatureGenerator(pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC");
 
 			sGen.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
 
@@ -127,20 +134,33 @@ public class BCPGPEncryptor {
 				spGen.setSignerUserID(false, (String) it.next());
 				sGen.setHashedSubpackets(spGen.generate());
 			}
-			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-			PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
-			OutputStream os = comData.open(bOut);
+			//ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+			//PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+			
+			//OutputStream bcOut = comData.open(encryptdOut); 
+			
+			//OutputStream os = comData.open(bOut);
 			//sGen.generateOnePassVersion(false).encode(os);
-			sGen.generateOnePassVersion(false).encode(bOut);
-			PGPUtil.writeFileToLiteralData(os, PGPLiteralData.BINARY, inputFile);
+			sGen.generateOnePassVersion(false).encode(bcOut);
+			
+			 PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+             OutputStream lOut = lGen.open(bcOut, PGPLiteralData.BINARY, inputFile);
+             
+             byte [] bs = IOUtils.toByteArray(new FileInputStream(inputFile));
+			
+			//PGPUtil.writeFileToLiteralData(lOut, PGPLiteralData.BINARY, inputFile);
+			//byte[] bytes = lOut.toByteArray();
+			lOut.write(bs);
+			sGen.update(bs);
+			lOut.close();
+			lGen.close();
+			sGen.generate().encode(bcOut);
+			
+			bcOut.close();
 			comData.close();
-			byte[] bytes = bOut.toByteArray();
-			OutputStream cOut = cPk.open(out, bytes.length);
-			sGen.update(bytes);
-			sGen.generate().encode(bOut);
-			cOut.write(bytes);
-			cOut.close();
+			cPk.close();
 			out.close();
+			
 		} catch (PGPException e) {
 			System.err.println(e);
 			if (e.getUnderlyingException() != null) {
