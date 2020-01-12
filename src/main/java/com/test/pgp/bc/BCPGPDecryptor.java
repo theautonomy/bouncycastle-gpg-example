@@ -153,6 +153,9 @@ public class BCPGPDecryptor {
 			bytes = IOUtils.toByteArray(is);
 			
 			if (isSigned) {
+				if(ops == null){
+					throw new PGPException("Unsigned file, it's expected to be signed!");
+				}
 				ops.update(bytes);
 				PGPSignatureList p3 = (PGPSignatureList) pgpFact.nextObject();
 				if (!ops.verify(p3.get(0))) {
