@@ -8,7 +8,7 @@ find in the [bc-java repository](https://github.com/bcgit/bc-java/blob/main/misc
 
 ## Requirements
 
-- Java 17 or later
+- Java 21 or later
 - Maven 3.6.3 or later
 - Bouncy Castle 1.86 (`bcpg-jdk18on` / `bcprov-jdk18on`), pulled in by Maven
 
