@@ -78,6 +78,32 @@ use them to protect real data.
 | `legacy-receiver.gpg.prv` / `legacy-sender.gpg.pub` | the original 2011 DSA/ElGamal keys, kept only to decrypt and verify `legacy-test.txt.signed.asc` | `password` for the key that file uses |
 | `test.txt` | the file the tests encrypt | |
 
+## High-level OpenPGP API (`openpgp-api` branch)
+The classes on `master` use Bouncy Castle's low-level OpenPGP classes (`PGPEncryptedDataGenerator`,
+`PGPObjectFactory` and so on). Bouncy Castle also has a high-level API,
+`org.bouncycastle.openpgp.api`, and the `openpgp-api` branch tries it out:
+
+        git switch openpgp-api
+        mvn clean test
+
+The branch adds:
+
+- `OpenPGPApiCrypto`: the same encrypt/sign and decrypt/verify operations in about a third of
+  the code. The API chooses the encryption subkey, negotiates algorithms, and checks keys and
+  signatures against a security policy.
+- `OpenPGPApiCryptoTest`: round trips in binary and ASCII-armored form, failure cases,
+  interoperability in both directions with `BCPGPEncryptor` / `BCPGPDecryptor`, and a round
+  trip with Ed25519 / X25519 keys generated in code.
+
+Things to know about the high-level API:
+
+- Its default policy rejects weak keys and algorithms. The 2011 DSA-1024 / ElGamal keys and the
+  SHA-1 signature in `legacy-test.txt.signed.asc` are refused unless you pass a relaxed
+  `OpenPGPDefaultPolicy`; the branch's tests show how.
+- `OpenPGPDocumentSignature.isValid()` with no arguments checks against the default policy,
+  not the one you configured; pass your policy explicitly.
+- `OpenPGPKeyGenerator.build(char[])` wipes the passphrase array you give it, so don't reuse it.
+
 ## Creating the test keys
 The `receiver` and `sender` keys were created with GnuPG 2.x. To create them again (or make
 your own), run the following from `src/test/resources` in a bash shell (on Windows, Git
