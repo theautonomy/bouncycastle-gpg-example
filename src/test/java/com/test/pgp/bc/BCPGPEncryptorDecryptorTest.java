@@ -96,7 +96,7 @@ class BCPGPEncryptorDecryptorTest {
         long recipientKeyId = recipientKeyId(encrypted);
 
         PGPPublicKey primaryKey =
-                BCPGPUtils.readPublicKeyRingCollection(resource("test.gpg.pub"))
+                BCPGPUtils.readPublicKeyRingCollection(resource("receiver.gpg.pub"))
                         .getKeyRings()
                         .next()
                         .getPublicKey();
@@ -106,7 +106,7 @@ class BCPGPEncryptorDecryptorTest {
                 "message must not be encrypted to the signing-only primary key");
         assertEquals(
                 recipientKeyId,
-                BCPGPUtils.readPublicKey(resource("test.gpg.pub")).getKeyID(),
+                BCPGPUtils.readPublicKey(resource("receiver.gpg.pub")).getKeyID(),
                 "message must be encrypted to the key readPublicKey selects");
     }
 
@@ -132,7 +132,7 @@ class BCPGPEncryptorDecryptorTest {
         newSigningEncryptor(false).encryptFile(resource("test.txt"), encrypted.toString());
 
         BCPGPDecryptor decryptor = newVerifyingDecryptor();
-        decryptor.setSigningPublicKeyFilePath(resource("legacy-wahaha.gpg.pub"));
+        decryptor.setSigningPublicKeyFilePath(resource("legacy-sender.gpg.pub"));
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -182,7 +182,7 @@ class BCPGPEncryptorDecryptorTest {
 
         BCPGPDecryptor decryptor = newLegacyDecryptor();
         decryptor.setSigned(true);
-        decryptor.setSigningPublicKeyFilePath(resource("legacy-wahaha.gpg.pub"));
+        decryptor.setSigningPublicKeyFilePath(resource("legacy-sender.gpg.pub"));
         decryptor.decryptFile(resource("legacy-test.txt.signed.asc"), decrypted.toString());
 
         assertEquals(LEGACY_CONTENT, Files.readString(decrypted, StandardCharsets.UTF_8));
@@ -204,21 +204,21 @@ class BCPGPEncryptorDecryptorTest {
         BCPGPEncryptor encryptor = new BCPGPEncryptor();
         encryptor.setArmored(armored);
         encryptor.setCheckIntegrity(true);
-        encryptor.setPublicKeyFilePath(resource("test.gpg.pub"));
+        encryptor.setPublicKeyFilePath(resource("receiver.gpg.pub"));
         return encryptor;
     }
 
     private static BCPGPEncryptor newSigningEncryptor(boolean armored) throws Exception {
         BCPGPEncryptor encryptor = newEncryptor(armored);
         encryptor.setSigning(true);
-        encryptor.setSigningPrivateKeyFilePath(resource("wahaha.gpg.prv"));
+        encryptor.setSigningPrivateKeyFilePath(resource("sender.gpg.prv"));
         encryptor.setSigningPrivateKeyPassword(PASSWORD);
         return encryptor;
     }
 
     private static BCPGPDecryptor newDecryptor() throws Exception {
         BCPGPDecryptor decryptor = new BCPGPDecryptor();
-        decryptor.setPrivateKeyFilePath(resource("test.gpg.prv"));
+        decryptor.setPrivateKeyFilePath(resource("receiver.gpg.prv"));
         decryptor.setPassword(PASSWORD);
         return decryptor;
     }
@@ -226,13 +226,13 @@ class BCPGPEncryptorDecryptorTest {
     private static BCPGPDecryptor newVerifyingDecryptor() throws Exception {
         BCPGPDecryptor decryptor = newDecryptor();
         decryptor.setSigned(true);
-        decryptor.setSigningPublicKeyFilePath(resource("wahaha.gpg.pub"));
+        decryptor.setSigningPublicKeyFilePath(resource("sender.gpg.pub"));
         return decryptor;
     }
 
     private static BCPGPDecryptor newLegacyDecryptor() throws Exception {
         BCPGPDecryptor decryptor = new BCPGPDecryptor();
-        decryptor.setPrivateKeyFilePath(resource("legacy-test.gpg.prv"));
+        decryptor.setPrivateKeyFilePath(resource("legacy-receiver.gpg.prv"));
         decryptor.setPassword(PASSWORD);
         return decryptor;
     }

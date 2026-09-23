@@ -23,13 +23,13 @@ SHA-256.
         BCPGPEncryptor encryptor = new BCPGPEncryptor();
         encryptor.setArmored(false);
         encryptor.setCheckIntegrity(true);
-        encryptor.setPublicKeyFilePath("./test.gpg.pub");
+        encryptor.setPublicKeyFilePath("./receiver.gpg.pub");
         encryptor.encryptFile("./test.txt", "./test.txt.enc");
 
 ## Code snippet to decrypt a file without verifying signature
 
         BCPGPDecryptor decryptor = new BCPGPDecryptor();
-        decryptor.setPrivateKeyFilePath("test.gpg.prv");
+        decryptor.setPrivateKeyFilePath("receiver.gpg.prv");
         decryptor.setPassword("password");
         decryptor.decryptFile("test.txt.enc", "test.txt.dec");
 
@@ -38,21 +38,21 @@ SHA-256.
         BCPGPEncryptor encryptor = new BCPGPEncryptor();
         encryptor.setArmored(false);
         encryptor.setCheckIntegrity(true);
-        encryptor.setPublicKeyFilePath("./test.gpg.pub");
+        encryptor.setPublicKeyFilePath("./receiver.gpg.pub");
         encryptor.setSigning(true);
-        encryptor.setSigningPrivateKeyFilePath("wahaha.gpg.prv");
+        encryptor.setSigningPrivateKeyFilePath("sender.gpg.prv");
         encryptor.setSigningPrivateKeyPassword("password");
         encryptor.encryptFile("./test.txt", "./test.txt.signed.enc");
 
 ## Code snippet to decrypt a file and verify signature
 
         BCPGPDecryptor decryptor = new BCPGPDecryptor();
-        decryptor.setPrivateKeyFilePath("test.gpg.prv");
+        decryptor.setPrivateKeyFilePath("receiver.gpg.prv");
         decryptor.setPassword("password");
         decryptor.setSigned(true);
-        decryptor.setSigningPublicKeyFilePath("wahaha.gpg.pub");
+        decryptor.setSigningPublicKeyFilePath("sender.gpg.pub");
 
-        // this file is encrypted with weili's public key and signed using wahaha's private key
+        // this file is encrypted with the receiver public key and signed with the sender private key
         decryptor.decryptFile("test.txt.signed.enc", "test.txt.signed.dec");
 
 ## Try it
@@ -60,26 +60,26 @@ SHA-256.
 snippet above, in binary and ASCII-armored form, and also decrypts a message GnuPG 1.4.9 made in
 2011. Run it from the project root; its output goes to `target/`:
 
-        mvn compile exec:java
+        mvn clean compile exec:java
 
 The unit tests in `src/test/java/com/test/pgp/bc/BCPGPEncryptorDecryptorTest.java` cover the
 same scenarios plus failure cases (tampered message, wrong password, missing or unknown
 signature). They write to a temporary directory that is deleted afterwards:
 
-        mvn test
+        mvn clean test
 
 The keys and input files are in `src/test/resources`. The keys are for testing only; never
 use them to protect real data.
 
 | Files | Key | Passphrase |
 |-------|-----|------------|
-| `test.gpg.pub` / `test.gpg.prv` | weili, RSA-3072, recipient | `password` |
-| `wahaha.gpg.pub` / `wahaha.gpg.prv` | wahaha, RSA-3072, signer | `password` |
-| `legacy-test.gpg.prv` / `legacy-wahaha.gpg.pub` | the original 2011 DSA/ElGamal keys, kept only to decrypt and verify `legacy-test.txt.signed.asc` | `password` for the key that file uses |
+| `receiver.gpg.pub` / `receiver.gpg.prv` | receiver, RSA-3072: messages are encrypted to it and it decrypts them | `password` |
+| `sender.gpg.pub` / `sender.gpg.prv` | sender, RSA-3072: signs messages | `password` |
+| `legacy-receiver.gpg.prv` / `legacy-sender.gpg.pub` | the original 2011 DSA/ElGamal keys, kept only to decrypt and verify `legacy-test.txt.signed.asc` | `password` for the key that file uses |
 | `test.txt` | the file the tests encrypt | |
 
 ## Creating the test keys
-The `test` and `wahaha` keys were created with GnuPG 2.x. To create them again (or make
+The `receiver` and `sender` keys were created with GnuPG 2.x. To create them again (or make
 your own), run the following from `src/test/resources` in a bash shell (on Windows, Git
 Bash works). A throwaway GnuPG home directory is used so your own keyring is not touched.
 
@@ -104,16 +104,16 @@ Passphrase: password
 %commit
 EOF
 }
-gen_key weili weili@example.com
-gen_key wahaha wahaha@example.com
+gen_key receiver receiver@example.com
+gen_key sender sender@example.com
 
 # export the keys in binary format; secret key exports need the passphrase
-gpg --export weili@example.com > test.gpg.pub
+gpg --export receiver@example.com > receiver.gpg.pub
 gpg --batch --pinentry-mode loopback --passphrase password \
-    --export-secret-keys weili@example.com > test.gpg.prv
-gpg --export wahaha@example.com > wahaha.gpg.pub
+    --export-secret-keys receiver@example.com > receiver.gpg.prv
+gpg --export sender@example.com > sender.gpg.pub
 gpg --batch --pinentry-mode loopback --passphrase password \
-    --export-secret-keys wahaha@example.com > wahaha.gpg.prv
+    --export-secret-keys sender@example.com > sender.gpg.prv
 
 # clean up the throwaway home directory
 gpgconf --kill gpg-agent
