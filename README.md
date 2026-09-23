@@ -55,6 +55,24 @@ SHA-256.
         // this file is encrypted with the receiver public key and signed with the sender private key
         decryptor.decryptFile("test.txt.signed.enc", "test.txt.signed.dec");
 
+## High-level API (`OpenPGPApiCrypto`)
+`OpenPGPApiCrypto` does the same encrypt/sign and decrypt/verify work using Bouncy Castle's
+high-level `org.bouncycastle.openpgp.api`. The API chooses the encryption subkey, negotiates
+algorithms, and checks keys and signatures against a policy:
+
+        OpenPGPApiCrypto crypto = new OpenPGPApiCrypto();
+        crypto.encryptFile(Path.of("test.txt"), Path.of("test.txt.signed.enc"),
+                crypto.readCertificate(Path.of("receiver.gpg.pub")),
+                crypto.readKey(Path.of("sender.gpg.prv")), "password".toCharArray(), false);
+        crypto.decryptFile(Path.of("test.txt.signed.enc"), Path.of("test.txt.signed.dec"),
+                crypto.readKey(Path.of("receiver.gpg.prv")), "password".toCharArray(),
+                crypto.readCertificate(Path.of("sender.gpg.pub")));
+
+The default policy rejects weak keys and algorithms, such as the DSA-1024 / ElGamal keys and the
+SHA-1 signature in `legacy-test.txt.signed.asc`. To read old data like that, pass a relaxed
+`OpenPGPDefaultPolicy` to `new OpenPGPApiCrypto(policy)`; see
+`OpenPGPApiCryptoTest.relaxedPolicyDecryptsAndVerifiesLegacyGnuPGMessage`.
+
 ## Try it
 `src/main/java/com/test/pgp/bc/BCPGPTest.java` is a runnable example that goes through every
 snippet above, in binary and ASCII-armored form, and also decrypts a message GnuPG 1.4.9 made in
