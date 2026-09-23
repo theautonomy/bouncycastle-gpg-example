@@ -56,31 +56,32 @@ SHA-256.
         decryptor.decryptFile("test.txt.signed.enc", "test.txt.signed.dec");
 
 ## Try it
-This project contains test pgp keys so that you can try it out right away. They are for
-testing only; never use them to protect real data.
+`src/main/java/com/test/pgp/bc/BCPGPTest.java` is a runnable example that goes through every
+snippet above, in binary and ASCII-armored form, and also decrypts a message GnuPG 1.4.9 made in
+2011. Run it from the project root; its output goes to `target/`:
+
+        mvn compile exec:java
+
+The unit tests in `src/test/java/com/test/pgp/bc/BCPGPEncryptorDecryptorTest.java` cover the
+same scenarios plus failure cases (tampered message, wrong password, missing or unknown
+signature). They write to a temporary directory that is deleted afterwards:
+
+        mvn test
+
+The keys and input files are in `src/test/resources`. The keys are for testing only; never
+use them to protect real data.
 
 | Files | Key | Passphrase |
 |-------|-----|------------|
 | `test.gpg.pub` / `test.gpg.prv` | weili, RSA-3072, recipient | `password` |
 | `wahaha.gpg.pub` / `wahaha.gpg.prv` | wahaha, RSA-3072, signer | `password` |
 | `legacy-test.gpg.prv` / `legacy-wahaha.gpg.pub` | the original 2011 DSA/ElGamal keys, kept only to decrypt and verify `legacy-test.txt.signed.asc` | `password` for the key that file uses |
-
-You can run the following mvn command from command line:
-
-        mvn compile exec:java
-
-Besides the binary output, the demo also writes an ASCII-armored encrypted and signed copy,
-`test.txt.signed.enc.asc`, and decrypts it back to `test.txt.signed.armored.dec`.
-
-To remove the generated files (`test.txt.enc`, `test.txt.dec`, `test.txt.signed.*` and
-`target/`) afterwards, run:
-
-        ./clean.sh
+| `test.txt` | the file the tests encrypt | |
 
 ## Creating the test keys
 The `test` and `wahaha` keys were created with GnuPG 2.x. To create them again (or make
-your own), run the following from the project root in a bash shell (on Windows, Git Bash
-works). A throwaway GnuPG home directory is used so your own keyring is not touched.
+your own), run the following from `src/test/resources` in a bash shell (on Windows, Git
+Bash works). A throwaway GnuPG home directory is used so your own keyring is not touched.
 
 ```bash
 export GNUPGHOME=$(mktemp -d)
@@ -126,5 +127,5 @@ Notes:
   keys, because the passphrase ends up in your shell history.
 - Add `--armor` to the export commands to get ASCII-armored keys. The code reads both
   formats.
-- `BCPGPUtils.readPublicKey` uses the first encryption-capable key in the file, so keep one
-  key ring per public key file.
+- `BCPGPUtils.readPublicKey` uses the first key in the file that is flagged for encryption,
+  so keep one key ring per public key file.

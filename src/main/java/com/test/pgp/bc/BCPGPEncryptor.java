@@ -116,12 +116,12 @@ public class BCPGPEncryptor {
 
         PGPSignatureGenerator sg = isSigning ? createSignatureGenerator() : null;
 
-        OutputStream fileOutStream = new BufferedOutputStream(new FileOutputStream(outputFile));
-        if (isArmored) {
-            fileOutStream = new ArmoredOutputStream(fileOutStream);
-        }
-
-        try (OutputStream out = fileOutStream;
+        // ArmoredOutputStream.close() writes the armor footer but does not close the stream it
+        // wraps, so the file stream is closed separately (last).
+        try (OutputStream fileOutStream =
+                        new BufferedOutputStream(new FileOutputStream(outputFile));
+                OutputStream out =
+                        isArmored ? new ArmoredOutputStream(fileOutStream) : fileOutStream;
                 OutputStream encryptedOutStream = pedg.open(out, new byte[1 << 16])) {
             PGPCompressedDataGenerator comData =
                     new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
